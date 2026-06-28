@@ -1,29 +1,42 @@
-import { useState } from "react";
+interface OutputProps {
+  text: string;
+  confidence?: number;
+}
 
-export default function Output() {
-  const [text] = useState("Waiting for sign...");
-
+export default function Output({
+  text,
+  confidence,
+}: OutputProps) {
   return (
     <div style={styles.wrapper}>
-      {/* HEADER */}
+      {/* Header */}
       <div style={styles.header}>
         <div style={styles.dot} />
         <h3 style={styles.title}>AI Result</h3>
       </div>
 
-      {/* RESULT CARD */}
+      {/* Resultado */}
       <div style={styles.card}>
-        <div style={styles.text}>{text}</div>
+        <div style={styles.text}>
+          {text || "Waiting for sign..."}
+        </div>
+
+        {confidence !== undefined && (
+          <div style={styles.confidence}>
+            Confidence: {(confidence * 100).toFixed(1)}%
+          </div>
+        )}
       </div>
 
-      {/* STATUS */}
+      {/* Footer */}
       <div style={styles.footer}>
-        <span>Real-time interpretation</span>
+        <span>
+          Real-time interpretation
+        </span>
       </div>
     </div>
   );
 }
-
 
 const styles: any = {
   wrapper: {
@@ -49,33 +62,40 @@ const styles: any = {
   },
 
   title: {
-    fontSize: "14px",
+    fontSize: "15px",
     fontWeight: 600,
     color: "#0f172a",
   },
 
   card: {
-    background: "rgba(255,255,255,0.6)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.05)",
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-    minHeight: "70px",
+    background: "rgba(255,255,255,.7)",
+    backdropFilter: "blur(16px)",
+    borderRadius: "18px",
+    border: "1px solid rgba(0,0,0,.06)",
+    boxShadow: "0 10px 30px rgba(0,0,0,.08)",
+    minHeight: "90px",
+    padding: "24px",
     display: "flex",
-    alignItems: "center",
+    flexDirection: "column",
+    justifyContent: "center",
   },
 
   text: {
-    fontSize: "28px",
-    fontWeight: 600,
-    color: "#0f172a",
-    letterSpacing: "-0.5px",
+    fontSize: "34px",
+    fontWeight: 700,
+    color: "#111827",
+    letterSpacing: "-1px",
+  },
+
+  confidence: {
+    marginTop: "10px",
+    fontSize: "14px",
+    color: "#64748b",
   },
 
   footer: {
-    marginTop: "8px",
-    fontSize: "12px",
+    marginTop: "12px",
+    fontSize: "13px",
     color: "#64748b",
   },
 };

@@ -1,46 +1,82 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import useHands from "../hooks/useHands";
 import { drawLandmarks } from "../utils/landmarks";
 
-export default function HandTracker() {
+import { loadModel } from "../ml/model";
+import { predictGesture } from "../ml/predict";
+
+interface HandTrackerProps {
+  setPrediction: (text: string) => void;
+  setConfidence: (confidence: number) => void;
+}
+
+export default function HandTracker({
+  setPrediction,
+  setConfidence,
+}: HandTrackerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [data, setData] = useState<number[]>([]);
+  const [modelReady, setModelReady] = useState(false);
 
-  useHands(videoRef, (results: any) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+  useEffect(() => {
+    async function init() {
+      await loadModel();
+      setModelReady(true);
+    }
 
-    if (!ctx || !canvas) return;
+    init();
+  }, []);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const handleResults = useCallback(
+    (results: any) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
 
-    if (results?.multiHandLandmarks?.length) {
+      if (!canvas || !ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!results?.multiHandLandmarks?.length) {
+        setPrediction("No hand detected");
+        setConfidence(0);
+        return;
+      }
+
       const landmarks = results.multiHandLandmarks[0];
 
       drawLandmarks(ctx, landmarks);
 
-      const vector = landmarks.flatMap((p: any) => [
-        p.x,
-        p.y,
-        p.z,
+      const vector = landmarks.flatMap((point: any) => [
+        point.x,
+        point.y,
+        point.z,
       ]);
 
       setData(vector);
 
-      console.log("🤟 vector:", vector);
-    }
-  });
+      if (modelReady) {
+        const result = predictGesture(vector);
+
+        setPrediction(result.label);
+        setConfidence(result.confidence);
+      }
+
+      console.log("Vector:", vector);
+    },
+    [modelReady, setPrediction, setConfidence]
+  );
+
+  useHands(videoRef, handleResults);
 
   return (
     <div style={styles.wrapper}>
-      {/* HEADER SMALL STATUS */}
       <div style={styles.status}>
         <div style={styles.dot} />
-        <span>Live hand tracking</span>
+        <span>{modelReady ? "AI Ready" : "Loading AI..."}</span>
       </div>
 
-      {/* VIDEO + CANVAS */}
       <div style={styles.stage}>
         <video
           ref={videoRef}
@@ -59,11 +95,11 @@ export default function HandTracker() {
         />
       </div>
 
-      {/* VECTOR INFO (DEBUG / AI READY) */}
       <div style={styles.footer}>
-        <span style={styles.label}>AI Vector:</span>
+        <span style={styles.label}>Landmarks</span>
+
         <span style={styles.value}>
-          {data.length > 0 ? `${data.length} features` : "waiting..."}
+          {data.length > 0 ? `${data.length} / 63` : "0 / 63"}
         </span>
       </div>
     </div>
@@ -72,18 +108,17 @@ export default function HandTracker() {
 
 const styles: any = {
   wrapper: {
-    position: "relative",
     width: "100%",
-    height: "100%",
   },
 
   status: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    fontSize: "12px",
+    marginBottom: "12px",
     color: "#64748b",
-    marginBottom: "10px",
+    fontSize: "13px",
+    fontWeight: 500,
   },
 
   dot: {
@@ -96,48 +131,53 @@ const styles: any = {
 
   stage: {
     position: "relative",
-    width: "420px",
-    height: "320px",
-    borderRadius: "16px",
+    width: "100%",
+    maxWidth: "420px",
+    aspectRatio: "4 / 3",
+    borderRadius: "18px",
     overflow: "hidden",
-    background: "rgba(255,255,255,0.4)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(0,0,0,0.05)",
+    background: "#fff",
+    border: "1px solid rgba(0,0,0,.05)",
+    boxShadow: "0 12px 35px rgba(0,0,0,.08)",
   },
 
   video: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    width: "420px",
-    height: "320px",
+    inset: 0,
+    width: "100%",
+    height: "100%",
     objectFit: "cover",
-    borderRadius: "16px",
   },
 
   canvas: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    width: "420px",
-    height: "320px",
+    inset: 0,
+    width: "100%",
+    height: "100%",
     pointerEvents: "none",
   },
 
   footer: {
-    marginTop: "10px",
+    marginTop: "14px",
     display: "flex",
     justifyContent: "space-between",
-    fontSize: "12px",
+    alignItems: "center",
+    padding: "12px 16px",
+    borderRadius: "14px",
+    background: "rgba(255,255,255,.7)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0,0,0,.04)",
     color: "#64748b",
+    fontSize: "13px",
   },
 
   label: {
-    fontWeight: 500,
+    fontWeight: 600,
   },
 
   value: {
     fontFamily: "monospace",
     color: "#0f172a",
+    fontWeight: 600,
   },
 };
