@@ -12,16 +12,13 @@ export default function Camera() {
   }, []);
 
   return (
-    <div>
-      <h3>📷 Cámara</h3>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        width={420}
-        height={320}
-        style={{ borderRadius: 12 }}
-      />
-    </div>
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      width={640}
+      height={480}
+      style={{ borderRadius: 12 }}
+    />
   );
 }

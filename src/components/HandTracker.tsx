@@ -15,25 +15,32 @@ export default function HandTracker() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (results.multiHandLandmarks) {
+    if (results?.multiHandLandmarks?.length) {
       const landmarks = results.multiHandLandmarks[0];
 
       drawLandmarks(ctx, landmarks);
 
-      const vector = landmarks.flatMap((p: any) => [p.x, p.y, p.z]);
+      const vector = landmarks.flatMap((p: any) => [
+        p.x,
+        p.y,
+        p.z,
+      ]);
+
       setData(vector);
 
-      console.log("📊 Landmarks:", vector);
+      console.log("🤟 vector:", vector);
     }
   });
 
   return (
-    <div>
-      <h3>✋ Detección de Mano</h3>
-
+    <div style={{ position: "relative" }}>
       <video
         ref={videoRef}
-        style={{ display: "none" }}
+        autoPlay
+        playsInline
+        width={420}
+        height={320}
+        style={{ borderRadius: 12 }}
       />
 
       <canvas
@@ -42,8 +49,9 @@ export default function HandTracker() {
         height={320}
         style={{
           position: "absolute",
-          top: 80,
-          left: 20,
+          top: 0,
+          left: 0,
+          pointerEvents: "none",
         }}
       />
     </div>
