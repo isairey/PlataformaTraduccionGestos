@@ -1,16 +1,16 @@
 import { useEffect } from "react";
-import { Hands } from "@mediapipe/hands";
-import { Camera } from "@mediapipe/camera_utils";
 
 export default function useHands(
-  videoRef: React.RefObject<HTMLVideoElement>,
+  videoRef: React.RefObject<HTMLVideoElement | null>,
   onResults: (results: any) => void
 ) {
   useEffect(() => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
 
-    const hands = new Hands({
-      locateFile: (file) =>
+    // 👇 usar window.Hands (NO import)
+    const hands = new (window as any).Hands({
+      locateFile: (file: string) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
 
@@ -23,18 +23,20 @@ export default function useHands(
 
     hands.onResults(onResults);
 
-    const camera = new Camera(videoRef.current, {
-      onFrame: async () => {
-        await hands.send({ image: videoRef.current! });
-      },
-      width: 640,
-      height: 480,
-    });
+    const detect = async () => {
+      const loop = async () => {
+        if (video.readyState === 4) {
+          await hands.send({ image: video });
+        }
+        requestAnimationFrame(loop);
+      };
 
-    camera.start();
+      loop();
+    };
+
+    detect();
 
     return () => {
-      camera.stop();
       hands.close();
     };
   }, [videoRef, onResults]);
