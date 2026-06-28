@@ -8,8 +8,14 @@ export default function useHands(
     const video = videoRef.current;
     if (!video) return;
 
-    // 👇 usar window.Hands (NO import)
-    const hands = new (window as any).Hands({
+    const HandsLib = (window as any).Hands;
+
+    if (!HandsLib) {
+      console.error("❌ MediaPipe no cargó aún");
+      return;
+    }
+
+    const hands = new HandsLib({
       locateFile: (file: string) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
@@ -23,21 +29,16 @@ export default function useHands(
 
     hands.onResults(onResults);
 
-    const detect = async () => {
-      const loop = async () => {
-        if (video.readyState === 4) {
-          await hands.send({ image: video });
-        }
-        requestAnimationFrame(loop);
-      };
+    const loop = async () => {
+      if (video.readyState === 4) {
+        await hands.send({ image: video });
+      }
 
-      loop();
+      requestAnimationFrame(loop);
     };
 
-    detect();
+    loop();
 
-    return () => {
-      hands.close();
-    };
+    return () => hands.close();
   }, [videoRef, onResults]);
 }
