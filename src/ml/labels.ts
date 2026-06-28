@@ -1,0 +1,1 @@
+export const labels = ["A", "B", "C", "HOLA", "NONE"];

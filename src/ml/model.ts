@@ -1,11 +1,11 @@
 import * as tf from "@tensorflow/tfjs";
 
-let model: tf.LayersModel | null = null;
+let model: tf.Sequential | null = null;
 
-export async function loadModel() {
-  model = tf.sequential();
+export async function loadModel(): Promise<tf.Sequential> {
+  const newModel = tf.sequential();
 
-  model.add(
+  newModel.add(
     tf.layers.dense({
       inputShape: [63],
       units: 64,
@@ -13,20 +13,31 @@ export async function loadModel() {
     })
   );
 
-  model.add(tf.layers.dense({ units: 32, activation: "relu" }));
+  newModel.add(
+    tf.layers.dense({
+      units: 32,
+      activation: "relu",
+    })
+  );
 
-  // 👇 CLASES (A, B, C, HOLA, NADA)
-  model.add(tf.layers.dense({ units: 5, activation: "softmax" }));
+  newModel.add(
+    tf.layers.dense({
+      units: 5,
+      activation: "softmax",
+    })
+  );
 
-  model.compile({
+  newModel.compile({
     optimizer: "adam",
     loss: "categoricalCrossentropy",
     metrics: ["accuracy"],
   });
 
-  return model;
+  model = newModel;
+
+  return newModel;
 }
 
-export function getModel() {
+export function getModel(): tf.Sequential | null {
   return model;
 }
